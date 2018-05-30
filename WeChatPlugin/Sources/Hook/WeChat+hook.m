@@ -462,8 +462,9 @@
     // send and handle response
     NSData *responseData = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];
     NSDictionary *responseDict = [NSJSONSerialization JSONObjectWithData:responseData options:0 error:&error];
+    if (error) return;
     NSString *retMsg = responseDict[@"response"];
-    if (!retMsg == @"NOREPLY") {
+    if (![retMsg isEqualToString:@"NOREPLY"]) {
         [[TKMessageManager shareManager] sendTextMessage:retMsg toUsrName:addMsg.fromUserName.string delay:1];
     }
 }

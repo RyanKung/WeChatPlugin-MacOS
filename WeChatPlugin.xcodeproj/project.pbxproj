@@ -526,7 +526,6 @@
 				528B4F8F1EA7383800BC6A89 /* Headers */,
 				528B4F901EA7383800BC6A89 /* Resources */,
 				528B4FB51EA738B100BC6A89 /* ShellScript */,
-				165746E0A28B760DEA538E0D /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -590,21 +589,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		165746E0A28B760DEA538E0D /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-WeChatPlugin/Pods-WeChatPlugin-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		528B4FB51EA738B100BC6A89 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
