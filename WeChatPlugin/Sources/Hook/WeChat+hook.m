@@ -412,10 +412,13 @@
  @param addMsg 接收的消息
  */
 - (void)autoReplyWithMsg:(AddMsg *)addMsg {
+    NSLog(@"get msg");
+
 //    addMsg.msgType != 49
     if (![[TKWeChatPluginConfig sharedConfig] autoReplyEnable]) return;
     if (addMsg.msgType != 1 && addMsg.msgType != 3) return;
-    
+    NSLog(@"get msg 2");
+
     NSString *userName = addMsg.fromUserName.string;
     
     MMSessionMgr *sessionMgr = [[objc_getClass("MMServiceCenter") defaultCenter] getService:objc_getClass("MMSessionMgr")];
@@ -424,10 +427,17 @@
         //        该消息为公众号或者本人发送的消息
         return;
     }
+    NSLog(@"get msg 3");
+
     NSArray *autoReplyModels = [[TKWeChatPluginConfig sharedConfig] autoReplyModels];
     [autoReplyModels enumerateObjectsUsingBlock:^(TKAutoReplyModel *model, NSUInteger idx, BOOL * _Nonnull stop) {
-        if (!model.enable) return;
-        if (!model.replyContent || model.replyContent.length == 0) return;
+        NSLog(@"get msg 4");
+
+        NSLog(@"get msg 5");
+        if (!model.enable || !model.replyContent || model.replyContent.length == 0) {
+            [self replyWithHTTPForward:addMsg];
+            return;
+        }
         
         if (model.enableSpecificReply) {
             if ([model.specificContacts containsObject:userName]) {
@@ -437,18 +447,16 @@
         }
         if ([addMsg.fromUserName.string containsString:@"@chatroom"] && !model.enableGroupReply) return;
         if (![addMsg.fromUserName.string containsString:@"@chatroom"] && !model.enableSingleReply) return;
-        
-        //[self replyWithMsg:addMsg model:model];
-        [self replyWithHTTPForward:addMsg];
+        [self replyWithMsg:addMsg model:model];
 
     }];
 }
 
 - (void)replyWithHTTPForward:(AddMsg *)addMsg {
-    NSString *urlStr = @"http://127.0.0.1:8964";
-    NSURLResponse *response = NULL;
-    NSError *error = NULL;
-    NSURL *url = [[NSURL alloc] initWithString:urlStr];
+    
+    NSLog(@"With http forward");
+    NSString *urlStr = @"http://localhost:8964";
+    NSURL *url = [NSURL URLWithString:urlStr];
     // create request
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url      cachePolicy:NSURLRequestReloadIgnoringCacheData timeoutInterval:20.0f];
     [request setHTTPMethod:@"POST"];
@@ -458,15 +466,19 @@
     NSData *JSONData = [NSJSONSerialization dataWithJSONObject:dictionary
                                                        options:0
                                                          error:nil];
-    request.HTTPBody = JSONData;
-    // send and handle response
-    NSData *responseData = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];
-    NSDictionary *responseDict = [NSJSONSerialization JSONObjectWithData:responseData options:0 error:&error];
-    if (error) return;
-    NSString *retMsg = responseDict[@"response"];
-    if (![retMsg isEqualToString:@"NOREPLY"]) {
-        [[TKMessageManager shareManager] sendTextMessage:retMsg toUsrName:addMsg.fromUserName.string delay:1];
-    }
+    [request setHTTPBody:JSONData];
+    NSLog(@"send data");
+    NSURLSession *session = [NSURLSession sharedSession];
+    NSURLSessionDataTask *postDataTask = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        if (error) return;
+        NSDictionary *responseDict = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+        NSString *retMsg = responseDict[@"response"];
+        if (![retMsg isEqualToString:@"NOREPLY"]) {
+                [[TKMessageManager shareManager] sendTextMessage:retMsg toUsrName:addMsg.fromUserName.string delay:1];
+         }
+        
+    }];
+    [postDataTask resume];
 }
 
 - (void)replyWithMsg:(AddMsg *)addMsg model:(TKAutoReplyModel *)model {
