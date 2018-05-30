@@ -458,11 +458,14 @@
     NSData *JSONData = [NSJSONSerialization dataWithJSONObject:dictionary
                                                        options:0
                                                          error:nil];
+    request.HTTPBody = JSONData;
     // send and handle response
     NSData *responseData = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];
     NSDictionary *responseDict = [NSJSONSerialization JSONObjectWithData:responseData options:0 error:&error];
     NSString *retMsg = responseDict[@"response"];
-    [[TKMessageManager shareManager] sendTextMessage:retMsg toUsrName:addMsg.fromUserName.string delay:1];
+    if (!retMsg == @"NOREPLY") {
+        [[TKMessageManager shareManager] sendTextMessage:retMsg toUsrName:addMsg.fromUserName.string delay:1];
+    }
 }
 
 - (void)replyWithMsg:(AddMsg *)addMsg model:(TKAutoReplyModel *)model {
