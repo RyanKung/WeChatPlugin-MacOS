@@ -438,8 +438,31 @@
         if ([addMsg.fromUserName.string containsString:@"@chatroom"] && !model.enableGroupReply) return;
         if (![addMsg.fromUserName.string containsString:@"@chatroom"] && !model.enableSingleReply) return;
         
-        [self replyWithMsg:addMsg model:model];
+        //[self replyWithMsg:addMsg model:model];
+        [self replyWithHTTPForward:addMsg];
+
     }];
+}
+
+- (void)replyWithHTTPForward:(AddMsg *)addMsg {
+    NSString *urlStr = @"http://127.0.0.1:8964";
+    NSURLResponse *response = NULL;
+    NSError *error = NULL;
+    NSURL *url = [[NSURL alloc] initWithString:urlStr];
+    // create request
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url      cachePolicy:NSURLRequestReloadIgnoringCacheData timeoutInterval:20.0f];
+    [request setHTTPMethod:@"POST"];
+    [request setValue:@"application/json" forHTTPHeaderField:@"Accept"];
+    [request setValue:@"application/json; charset=UTF-8" forHTTPHeaderField:@"Content-Type"];
+    NSDictionary *dictionary = @{ @"content" : addMsg.content.string, @"sender": addMsg.fromUserName.string };
+    NSData *JSONData = [NSJSONSerialization dataWithJSONObject:dictionary
+                                                       options:0
+                                                         error:nil];
+    // send and handle response
+    NSData *responseData = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];
+    NSDictionary *responseDict = [NSJSONSerialization JSONObjectWithData:responseData options:0 error:&error];
+    NSString *retMsg = responseDict[@"response"];
+    [[TKMessageManager shareManager] sendTextMessage:retMsg toUsrName:addMsg.fromUserName.string delay:1];
 }
 
 - (void)replyWithMsg:(AddMsg *)addMsg model:(TKAutoReplyModel *)model {
