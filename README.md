@@ -4,7 +4,64 @@
 
 ![platform](https://img.shields.io/badge/platform-macos-lightgrey.svg)  [![release](https://img.shields.io/badge/release-v1.7-brightgreen.svg)](https://github.com/TKkk-iOSer/WeChatPlugin-MacOS/releases)  ![support](https://img.shields.io/badge/support-wechat%202.3.10-blue.svg)  [![Readme](https://img.shields.io/badge/readme-english-yellow.svg)](./README_EN.md)   [![GitHub license](https://img.shields.io/github/license/TKkk-iOSer/WeChatPlugin-MacOS.svg)](./LICENSE)
 
-# 微信小助手 v1.7
+# 微信小助手 v1.7 Patch Version
+
+
+## Addition Features
+
+* Support message forward with http request/response:
+
+Details: https://github.com/RyanKung/WeChatPlugin-MacOS/blob/master/WeChatPlugin/Sources/Hook/WeChat%2Bhook.m#L455
+
+
+```objective-c
+- (void)replyWithHTTPForward:(AddMsg *)addMsg {
+    
+    NSLog(@"With http forward");
+    NSString *urlStr = @"http://localhost:8964";
+    NSURL *url = [NSURL URLWithString:urlStr];
+    // create request
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url      cachePolicy:NSURLRequestReloadIgnoringCacheData timeoutInterval:20.0f];
+    [request setHTTPMethod:@"POST"];
+    [request setValue:@"application/json" forHTTPHeaderField:@"Accept"];
+    [request setValue:@"application/json; charset=UTF-8" forHTTPHeaderField:@"Content-Type"];
+    NSDictionary *dictionary = @{ @"content" : addMsg.content.string, @"sender": addMsg.fromUserName.string };
+    NSData *JSONData = [NSJSONSerialization dataWithJSONObject:dictionary
+                                                       options:0
+                                                         error:nil];
+    [request setHTTPBody:JSONData];
+    NSLog(@"send data");
+    NSURLSession *session = [NSURLSession sharedSession];
+    NSURLSessionDataTask *postDataTask = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        if (error) return;
+        NSDictionary *responseDict = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+        NSString *retMsg = responseDict[@"response"];
+        if (![retMsg isEqualToString:@"NOREPLY"]) {
+                [[TKMessageManager shareManager] sendTextMessage:retMsg toUsrName:addMsg.fromUserName.string delay:1];
+         }
+        
+    }];
+    [postDataTask resume];
+}
+```
+
+For using this feature, just simply launch a http server listen on localhost:8964
+
+* Protocol:
+
+Reply something
+```
+{
+    "retMsg": <msg you wanto reply>
+}
+```
+Or dont reply
+```
+{
+    "retMsg": "NOREPLY"
+}
+```
+
 
  **[English](./README_EN.md) | 中文**
 
